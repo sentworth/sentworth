@@ -23,13 +23,13 @@ export function settingsFrom(
   return { key, url };
 }
 
-// The server reads a list in a query as state[0]=a&state[1]=b; a bare state=a is refused as "not an array", even for one.
+// A list goes as repeated plain keys (state=a&state=b), the way /openapi.json describes it.
 export function querySerializer(query: Record<string, unknown>) {
   const out = new URLSearchParams();
   for (const [name, value] of Object.entries(query)) {
     if (value === undefined || value === null) continue;
     if (Array.isArray(value))
-      value.forEach((one, i) => out.append(`${name}[${String(i)}]`, String(one)));
+      value.forEach((one) => out.append(name, String(one)));
     else out.append(name, String(value));
   }
   return out.toString();

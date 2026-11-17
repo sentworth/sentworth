@@ -144,8 +144,7 @@ describe('list, rules, cancel', () => {
     }));
     const { ctx, lines } = context();
     await run.list(ctx, { network: ['x', 'bluesky'], words: 'launch', limit: '5' });
-    expect(url.searchParams.get('network[0]')).toBe('x');
-    expect(url.searchParams.get('network[1]')).toBe('bluesky');
+    expect(url.searchParams.getAll('network')).toEqual(['x', 'bluesky']);
     expect(url.searchParams.get('words')).toBe('launch');
     expect(url.searchParams.get('limit')).toBe('5');
     expect(lines[0]).toBe('No posts match.');
