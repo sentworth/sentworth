@@ -1,0 +1,12 @@
+{
+  "name": "sentworth",
+  "description": "Sentworth: schedule posts to your social accounts from Claude Code",
+  "owner": { "name": "Sentworth", "url": "https://sentworth.com" },
+  "plugins": [
+    {
+      "name": "sentworth",
+      "source": "./",
+      "description": "The Sentworth skill and connector: schedule, draft and look up posts on X, Instagram, TikTok, Facebook, Threads, YouTube, LinkedIn and Bluesky."
+    }
+  ]
+}

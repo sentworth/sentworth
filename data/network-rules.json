@@ -1,0 +1,144 @@
+{
+  "x": {
+    "name": "X",
+    "replies": "thread",
+    "partGapMs": 60000,
+    "dailyPosts": null,
+    "accountGapMs": null,
+    "alwaysAsksFirst": false,
+    "rules": {
+      "shortLimit": 280,
+      "longLimit": 25000,
+      "maxParts": 25,
+      "maxPictures": 4,
+      "imageBytes": 5242880,
+      "gifBytes": 15728640,
+      "types": [
+        "image/jpeg",
+        "image/png",
+        "image/webp",
+        "image/gif"
+      ]
+    }
+  },
+  "instagram": {
+    "name": "Instagram",
+    "replies": "first_comment",
+    "partGapMs": 60000,
+    "dailyPosts": 100,
+    "accountGapMs": null,
+    "alwaysAsksFirst": false,
+    "rules": {
+      "limit": 2200,
+      "hashtags": 30,
+      "maxFiles": 10,
+      "tallest": 0.8,
+      "widest": 1.91,
+      "reel": {
+        "shortestMs": 3000,
+        "longestMs": 900000,
+        "bytes": 314572800
+      },
+      "story": {
+        "longestMs": 60000,
+        "bytes": 104857600
+      },
+      "dailyPosts": 100
+    }
+  },
+  "tiktok": {
+    "name": "TikTok",
+    "replies": "none",
+    "partGapMs": null,
+    "dailyPosts": 10,
+    "accountGapMs": 600000,
+    "alwaysAsksFirst": true,
+    "rules": {
+      "videoLimit": 2200,
+      "photoLimit": 4000,
+      "maxPhotos": 35,
+      "shortestMs": 3000,
+      "longestMs": 600000,
+      "dailyPosts": 10,
+      "gapMs": 600000
+    }
+  },
+  "facebook": {
+    "name": "Facebook",
+    "replies": "first_comment",
+    "partGapMs": 60000,
+    "dailyPosts": null,
+    "accountGapMs": null,
+    "alwaysAsksFirst": false,
+    "rules": {
+      "limit": 63206,
+      "maxPhotos": 10,
+      "photoBytes": 10485760,
+      "videoBytes": 1073741824,
+      "reel": {
+        "shortestMs": 3000,
+        "longestMs": 90000
+      }
+    }
+  },
+  "threads": {
+    "name": "Threads",
+    "replies": "thread",
+    "partGapMs": 60000,
+    "dailyPosts": 250,
+    "accountGapMs": null,
+    "alwaysAsksFirst": false,
+    "rules": {
+      "limit": 500,
+      "links": 5,
+      "maxParts": 25,
+      "maxFiles": 20,
+      "pictureBytes": 8388608,
+      "videoBytes": 1073741824,
+      "longestMs": 300000,
+      "dailyPosts": 250
+    }
+  },
+  "youtube": {
+    "name": "YouTube",
+    "replies": "none",
+    "partGapMs": null,
+    "dailyPosts": null,
+    "accountGapMs": null,
+    "alwaysAsksFirst": true,
+    "rules": {
+      "titleLimit": 100,
+      "descriptionBytes": 5000,
+      "videoBytes": 1073741824,
+      "shortLongestMs": 180000
+    }
+  },
+  "linkedin": {
+    "name": "LinkedIn",
+    "replies": "first_comment",
+    "partGapMs": 60000,
+    "dailyPosts": null,
+    "accountGapMs": null,
+    "alwaysAsksFirst": false,
+    "rules": {
+      "limit": 3000,
+      "maxPictures": 20,
+      "sameTextMs": 600000
+    }
+  },
+  "bluesky": {
+    "name": "Bluesky",
+    "replies": "thread",
+    "partGapMs": 60000,
+    "dailyPosts": null,
+    "accountGapMs": null,
+    "alwaysAsksFirst": false,
+    "rules": {
+      "limit": 300,
+      "textBytes": 3000,
+      "maxPictures": 4,
+      "pictureBytes": 2097152,
+      "maxParts": 25
+    }
+  }
+}

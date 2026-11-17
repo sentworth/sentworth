@@ -1,0 +1,53 @@
+{
+  "name": "sentworth",
+  "version": "0.1.0",
+  "description": "Schedule posts to your social accounts from the command line or from an assistant, through Sentworth.",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "sentworth": "dist/cli.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tsotnebukiya/sentworth.git"
+  },
+  "homepage": "https://sentworth.com",
+  "keywords": [
+    "social media",
+    "scheduler",
+    "mcp",
+    "skill",
+    "cli",
+    "claude-code"
+  ],
+  "scripts": {
+    "generate": "openapi-typescript openapi.json -o src/api.d.ts && node scripts/make-skill.mjs",
+    "build": "tsdown",
+    "check-types": "tsc --noEmit",
+    "test": "vitest run",
+    "check-skill": "node scripts/make-skill.mjs --check",
+    "prepublishOnly": "pnpm check-types && pnpm test && pnpm check-skill && pnpm build"
+  },
+  "dependencies": {
+    "commander": "15.0.0",
+    "openapi-fetch": "0.17.0"
+  },
+  "devDependencies": {
+    "@types/node": "26.6.6",
+    "msw": "3.0.3",
+    "openapi-typescript": "7.13.0",
+    "tsdown": "0.23.5",
+    "typescript": "5.9.3",
+    "vitest": "5.1.0"
+  },
+  "volta": {
+    "node": "26.13.0"
+  },
+  "packageManager": "pnpm@12.14.0"
+}

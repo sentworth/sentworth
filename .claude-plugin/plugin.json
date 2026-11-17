@@ -1,0 +1,19 @@
+{
+  "name": "sentworth",
+  "displayName": "Sentworth",
+  "version": "0.1.0",
+  "description": "Schedule posts to your social accounts from Claude Code: the Sentworth skill and the Sentworth connector.",
+  "author": { "name": "Sentworth", "url": "https://sentworth.com" },
+  "homepage": "https://sentworth.com",
+  "privacyPolicyUrl": "https://sentworth.com/privacy",
+  "supportUrl": "https://sentworth.com",
+  "repository": "https://github.com/tsotnebukiya/sentworth",
+  "license": "MIT",
+  "keywords": ["social media", "scheduler", "posts", "threads", "mcp"],
+  "mcpServers": {
+    "sentworth": {
+      "type": "http",
+      "url": "https://sentworth.com/mcp"
+    }
+  }
+}

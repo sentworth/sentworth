@@ -1,0 +1,2932 @@
+{
+  "info": {
+    "title": "Sentworth API",
+    "version": "1.0.0",
+    "summary": "Hand posts to a person's social accounts from a program.",
+    "description": "Hand in, look up, change and cancel posts on the accounts a person connected to Sentworth. Make a key in Settings, under Keys, and send it as \"Authorization: Bearer sw_live_…\" (or in an x-api-key header). Every error answers with { \"code\", \"message\", \"details\" }; the message says in words what to do. Limits: 10 asks a second per key, 1,000 writes and 20,000 reads a day per key, and 100 posts in 5 minutes and 400 an hour per person across every way of posting. Answers carry RateLimit-Limit, RateLimit-Remaining and RateLimit-Reset (the second), and RateLimit-Day-* (today's ceiling); a 429 carries Retry-After."
+  },
+  "servers": [
+    {
+      "url": "https://sentworth.com"
+    }
+  ],
+  "security": [
+    {
+      "bearer": []
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearer": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "A key made in Settings, under Keys, starting sw_live_"
+      }
+    }
+  },
+  "openapi": "3.1.1",
+  "paths": {
+    "/v1/accounts": {
+      "get": {
+        "operationId": "list_accounts",
+        "summary": "List accounts",
+        "description": "The person's connected accounts with their ids, their time zone and the time now, what is left today on X and TikTok, and which accounts wait for the person's yes. Call it first.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "accounts": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "network": {
+                            "type": "string",
+                            "enum": [
+                              "x",
+                              "instagram",
+                              "tiktok",
+                              "facebook",
+                              "threads",
+                              "youtube",
+                              "linkedin",
+                              "bluesky"
+                            ]
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "kind": {
+                            "type": "string",
+                            "enum": [
+                              "profile",
+                              "page"
+                            ]
+                          },
+                          "state": {
+                            "type": "string",
+                            "enum": [
+                              "connected",
+                              "broken"
+                            ]
+                          },
+                          "groups": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "usual_times": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "posts_left_today": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          },
+                          "daily_limit": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          },
+                          "waits_for_yes": {
+                            "type": "boolean"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "network",
+                          "name",
+                          "kind",
+                          "state",
+                          "groups",
+                          "usual_times",
+                          "posts_left_today",
+                          "daily_limit",
+                          "waits_for_yes"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "groups": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "name": {
+                            "type": "string"
+                          },
+                          "account_ids": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        "required": [
+                          "name",
+                          "account_ids"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "time_zone": {
+                      "type": "string"
+                    },
+                    "time_now": {
+                      "type": "string"
+                    },
+                    "x_posts_left_today": {
+                      "type": "number"
+                    },
+                    "tiktok_posts_left_today": {
+                      "type": [
+                        "number",
+                        "null"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "accounts",
+                    "groups",
+                    "time_zone",
+                    "time_now",
+                    "x_posts_left_today",
+                    "tiktok_posts_left_today"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/posts": {
+      "post": {
+        "operationId": "create_post",
+        "summary": "Hand in a post",
+        "description": "Hands in a post, a thread, or a draft to accounts named by id, network or group. Say when with exactly one of time, next_usual_time, now or draft. Send a reference so a retry makes one post.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "text": {
+                    "type": "string",
+                    "maxLength": 25000
+                  },
+                  "media": {
+                    "maxItems": 35,
+                    "type": "array",
+                    "items": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "format": "uuid",
+                          "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "url": {
+                              "type": "string",
+                              "maxLength": 2000,
+                              "format": "uri"
+                            }
+                          },
+                          "required": [
+                            "url"
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "download_url": {
+                              "type": "string",
+                              "maxLength": 2000,
+                              "format": "uri"
+                            },
+                            "file_id": {
+                              "type": "string",
+                              "maxLength": 200
+                            },
+                            "name": {
+                              "type": "string",
+                              "maxLength": 255
+                            },
+                            "mime_type": {
+                              "type": "string",
+                              "maxLength": 100
+                            }
+                          },
+                          "required": [
+                            "download_url"
+                          ]
+                        }
+                      ]
+                    }
+                  },
+                  "parts": {
+                    "minItems": 1,
+                    "maxItems": 25,
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "text": {
+                          "type": "string",
+                          "maxLength": 25000
+                        },
+                        "media": {
+                          "default": [],
+                          "maxItems": 35,
+                          "type": "array",
+                          "items": {
+                            "anyOf": [
+                              {
+                                "type": "string",
+                                "format": "uuid",
+                                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                              },
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "url": {
+                                    "type": "string",
+                                    "maxLength": 2000,
+                                    "format": "uri"
+                                  }
+                                },
+                                "required": [
+                                  "url"
+                                ]
+                              },
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "download_url": {
+                                    "type": "string",
+                                    "maxLength": 2000,
+                                    "format": "uri"
+                                  },
+                                  "file_id": {
+                                    "type": "string",
+                                    "maxLength": 200
+                                  },
+                                  "name": {
+                                    "type": "string",
+                                    "maxLength": 255
+                                  },
+                                  "mime_type": {
+                                    "type": "string",
+                                    "maxLength": 100
+                                  }
+                                },
+                                "required": [
+                                  "download_url"
+                                ]
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      "required": [
+                        "text"
+                      ]
+                    }
+                  },
+                  "account_ids": {
+                    "maxItems": 50,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "uuid",
+                      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    }
+                  },
+                  "networks": {
+                    "maxItems": 10,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "x",
+                        "instagram",
+                        "tiktok",
+                        "facebook",
+                        "threads",
+                        "youtube",
+                        "linkedin",
+                        "bluesky"
+                      ]
+                    }
+                  },
+                  "group": {
+                    "type": "string",
+                    "maxLength": 100
+                  },
+                  "choices": {
+                    "default": [],
+                    "maxItems": 50,
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "account_id": {
+                          "type": "string",
+                          "format": "uuid",
+                          "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                        },
+                        "instagram": {
+                          "type": "object",
+                          "properties": {
+                            "kind": {
+                              "type": "string",
+                              "enum": [
+                                "post",
+                                "story"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "kind"
+                          ]
+                        },
+                        "facebook": {
+                          "type": "object",
+                          "properties": {
+                            "kind": {
+                              "type": "string",
+                              "enum": [
+                                "post",
+                                "story"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "kind"
+                          ]
+                        },
+                        "tiktok": {
+                          "type": "object",
+                          "properties": {
+                            "privacy": {
+                              "anyOf": [
+                                {
+                                  "type": "string",
+                                  "enum": [
+                                    "PUBLIC_TO_EVERYONE",
+                                    "MUTUAL_FOLLOW_FRIENDS",
+                                    "FOLLOWER_OF_CREATOR",
+                                    "SELF_ONLY"
+                                  ]
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "comments": {
+                              "type": "boolean"
+                            },
+                            "duet": {
+                              "type": "boolean"
+                            },
+                            "stitch": {
+                              "type": "boolean"
+                            },
+                            "disclose": {
+                              "type": "boolean"
+                            },
+                            "yourBrand": {
+                              "type": "boolean"
+                            },
+                            "brandedContent": {
+                              "type": "boolean"
+                            },
+                            "inbox": {
+                              "type": "boolean"
+                            }
+                          }
+                        },
+                        "youtube": {
+                          "type": "object",
+                          "properties": {
+                            "title": {
+                              "type": "string",
+                              "maxLength": 400
+                            },
+                            "made_for_kids": {
+                              "type": "boolean"
+                            },
+                            "cover_media_id": {
+                              "type": "string",
+                              "format": "uuid",
+                              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                            }
+                          },
+                          "required": [
+                            "title",
+                            "made_for_kids"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "account_id"
+                      ]
+                    }
+                  },
+                  "own_texts": {
+                    "default": [],
+                    "maxItems": 50,
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "account_id": {
+                          "type": "string",
+                          "format": "uuid",
+                          "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                        },
+                        "text": {
+                          "type": "string",
+                          "maxLength": 25000
+                        }
+                      },
+                      "required": [
+                        "account_id",
+                        "text"
+                      ]
+                    }
+                  },
+                  "time": {
+                    "type": "string",
+                    "maxLength": 40
+                  },
+                  "time_zone": {
+                    "type": "string",
+                    "maxLength": 64
+                  },
+                  "next_usual_time": {
+                    "type": "boolean"
+                  },
+                  "now": {
+                    "type": "boolean"
+                  },
+                  "draft": {
+                    "type": "boolean"
+                  },
+                  "repeat_rule": {
+                    "type": "object",
+                    "properties": {
+                      "every": {
+                        "type": "string",
+                        "enum": [
+                          "day",
+                          "days",
+                          "week",
+                          "two_weeks",
+                          "month"
+                        ]
+                      },
+                      "days": {
+                        "type": "integer",
+                        "minimum": 2,
+                        "maximum": 6
+                      },
+                      "ends": {
+                        "anyOf": [
+                          {
+                            "type": "object",
+                            "properties": {
+                              "after": {
+                                "type": "integer",
+                                "minimum": 2,
+                                "maximum": 52
+                              }
+                            },
+                            "required": [
+                              "after"
+                            ]
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "on": {
+                                "type": "string",
+                                "format": "date",
+                                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                              }
+                            },
+                            "required": [
+                              "on"
+                            ]
+                          }
+                        ]
+                      }
+                    },
+                    "required": [
+                      "every",
+                      "ends"
+                    ]
+                  },
+                  "leave_signatures_off": {
+                    "default": false,
+                    "type": "boolean"
+                  },
+                  "made_with_ai": {
+                    "type": "boolean"
+                  },
+                  "reference": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "post": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "state": {
+                          "type": "string",
+                          "enum": [
+                            "active",
+                            "draft",
+                            "waiting_for_yes",
+                            "cancelled",
+                            "paused"
+                          ]
+                        },
+                        "word": {
+                          "type": "string",
+                          "enum": [
+                            "draft",
+                            "scheduled",
+                            "sending",
+                            "arrived",
+                            "did_not_arrive",
+                            "not_confirmed",
+                            "will_not_go_out",
+                            "paused",
+                            "reconnect",
+                            "waiting_for_yes"
+                          ]
+                        },
+                        "made_by": {
+                          "type": "object",
+                          "properties": {
+                            "kind": {
+                              "type": "string",
+                              "enum": [
+                                "person",
+                                "assistant",
+                                "program"
+                              ]
+                            },
+                            "name": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "kind",
+                            "name"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "made_with_ai": {
+                          "type": "boolean"
+                        },
+                        "created_at": {
+                          "type": "string"
+                        },
+                        "time": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "time_zone": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "parts": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "text": {
+                                "type": "string"
+                              },
+                              "media": {
+                                "type": "array",
+                                "items": {
+                                  "type": "string"
+                                }
+                              }
+                            },
+                            "required": [
+                              "text",
+                              "media"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "accounts": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "lines": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "account_id": {
+                                "type": "string"
+                              },
+                              "network": {
+                                "type": "string",
+                                "enum": [
+                                  "x",
+                                  "instagram",
+                                  "tiktok",
+                                  "facebook",
+                                  "threads",
+                                  "youtube",
+                                  "linkedin",
+                                  "bluesky"
+                                ]
+                              },
+                              "handle": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "part": {
+                                "type": "number"
+                              },
+                              "state": {
+                                "type": "string",
+                                "enum": [
+                                  "scheduled",
+                                  "sending",
+                                  "arrived",
+                                  "did_not_arrive",
+                                  "not_confirmed",
+                                  "will_not_go_out"
+                                ]
+                              },
+                              "words": {
+                                "type": "string"
+                              },
+                              "reason": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "link": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "due_at": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "ended_at": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "try_number": {
+                                "type": "number"
+                              }
+                            },
+                            "required": [
+                              "account_id",
+                              "network",
+                              "handle",
+                              "part",
+                              "state",
+                              "words",
+                              "reason",
+                              "link",
+                              "due_at",
+                              "ended_at",
+                              "try_number"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "link": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "do_not_hand_over_again": {
+                          "type": "boolean"
+                        },
+                        "note": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "can_change": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "state",
+                        "word",
+                        "made_by",
+                        "made_with_ai",
+                        "created_at",
+                        "time",
+                        "time_zone",
+                        "parts",
+                        "accounts",
+                        "lines",
+                        "link",
+                        "do_not_hand_over_again",
+                        "note",
+                        "can_change"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "post_ids": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "already_made": {
+                      "type": "boolean"
+                    },
+                    "waiting_for_yes": {
+                      "type": "boolean"
+                    },
+                    "saved_as_draft": {
+                      "type": "boolean"
+                    },
+                    "note": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "post",
+                    "post_ids",
+                    "already_made",
+                    "waiting_for_yes",
+                    "saved_as_draft",
+                    "note"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "409",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": {
+                          "const": true
+                        },
+                        "code": {
+                          "const": "REFUSED"
+                        },
+                        "status": {
+                          "const": 409
+                        },
+                        "message": {
+                          "type": "string",
+                          "default": "REFUSED"
+                        },
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "message": {
+                              "type": "string"
+                            },
+                            "problems": {
+                              "default": [],
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "level": {
+                                    "type": "string",
+                                    "enum": [
+                                      "block",
+                                      "warn"
+                                    ]
+                                  },
+                                  "message": {
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "level",
+                                  "message"
+                                ],
+                                "additionalProperties": false
+                              }
+                            },
+                            "why": {
+                              "type": "string",
+                              "enum": [
+                                "changed",
+                                "started"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "message",
+                            "problems"
+                          ],
+                          "additionalProperties": false
+                        }
+                      },
+                      "required": [
+                        "defined",
+                        "code",
+                        "status",
+                        "message",
+                        "data"
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": {
+                          "const": false
+                        },
+                        "code": {
+                          "type": "string"
+                        },
+                        "status": {
+                          "type": "number"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "data": {}
+                      },
+                      "required": [
+                        "defined",
+                        "code",
+                        "status",
+                        "message"
+                      ]
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "operationId": "list_posts",
+        "summary": "List posts",
+        "description": "Posts newest first, with filters (state, network, made by, words) and a date range.",
+        "parameters": [
+          {
+            "name": "tab",
+            "in": "query",
+            "schema": {
+              "default": "all",
+              "type": "string",
+              "enum": [
+                "all",
+                "drafts",
+                "attention",
+                "sent"
+              ]
+            },
+            "allowEmptyValue": true,
+            "allowReserved": true
+          },
+          {
+            "name": "state",
+            "in": "query",
+            "schema": {
+              "maxItems": 20,
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "draft",
+                  "scheduled",
+                  "sending",
+                  "arrived",
+                  "did_not_arrive",
+                  "not_confirmed",
+                  "will_not_go_out",
+                  "paused",
+                  "reconnect",
+                  "waiting_for_yes"
+                ]
+              }
+            },
+            "style": "deepObject",
+            "explode": true,
+            "allowEmptyValue": true,
+            "allowReserved": true
+          },
+          {
+            "name": "network",
+            "in": "query",
+            "schema": {
+              "maxItems": 10,
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "x",
+                  "instagram",
+                  "tiktok",
+                  "facebook",
+                  "threads",
+                  "youtube",
+                  "linkedin",
+                  "bluesky"
+                ]
+              }
+            },
+            "style": "deepObject",
+            "explode": true,
+            "allowEmptyValue": true,
+            "allowReserved": true
+          },
+          {
+            "name": "made_by",
+            "in": "query",
+            "schema": {
+              "maxItems": 3,
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "person",
+                  "assistant",
+                  "program"
+                ]
+              }
+            },
+            "style": "deepObject",
+            "explode": true,
+            "allowEmptyValue": true,
+            "allowReserved": true
+          },
+          {
+            "name": "words",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            },
+            "allowEmptyValue": true,
+            "allowReserved": true
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "maxLength": 40
+            },
+            "allowEmptyValue": true,
+            "allowReserved": true
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "maxLength": 40
+            },
+            "allowEmptyValue": true,
+            "allowReserved": true
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "schema": {
+              "default": 0,
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "allowEmptyValue": true,
+            "allowReserved": true
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "default": 25,
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            },
+            "allowEmptyValue": true,
+            "allowReserved": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "posts": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "state": {
+                            "type": "string",
+                            "enum": [
+                              "active",
+                              "draft",
+                              "waiting_for_yes",
+                              "cancelled",
+                              "paused"
+                            ]
+                          },
+                          "word": {
+                            "type": "string",
+                            "enum": [
+                              "draft",
+                              "scheduled",
+                              "sending",
+                              "arrived",
+                              "did_not_arrive",
+                              "not_confirmed",
+                              "will_not_go_out",
+                              "paused",
+                              "reconnect",
+                              "waiting_for_yes"
+                            ]
+                          },
+                          "made_by": {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "enum": [
+                                  "person",
+                                  "assistant",
+                                  "program"
+                                ]
+                              },
+                              "name": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "kind",
+                              "name"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "made_with_ai": {
+                            "type": "boolean"
+                          },
+                          "time": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "text": {
+                            "type": "string"
+                          },
+                          "parts": {
+                            "type": "number"
+                          },
+                          "accounts": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "account_id": {
+                                  "type": "string"
+                                },
+                                "network": {
+                                  "type": "string",
+                                  "enum": [
+                                    "x",
+                                    "instagram",
+                                    "tiktok",
+                                    "facebook",
+                                    "threads",
+                                    "youtube",
+                                    "linkedin",
+                                    "bluesky"
+                                  ]
+                                },
+                                "handle": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "state": {
+                                  "type": "string",
+                                  "enum": [
+                                    "draft",
+                                    "scheduled",
+                                    "sending",
+                                    "arrived",
+                                    "did_not_arrive",
+                                    "not_confirmed",
+                                    "will_not_go_out",
+                                    "paused",
+                                    "reconnect",
+                                    "waiting_for_yes"
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "account_id",
+                                "network",
+                                "handle",
+                                "state"
+                              ],
+                              "additionalProperties": false
+                            }
+                          },
+                          "do_not_hand_over_again": {
+                            "type": "boolean"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "state",
+                          "word",
+                          "made_by",
+                          "made_with_ai",
+                          "time",
+                          "text",
+                          "parts",
+                          "accounts",
+                          "do_not_hand_over_again"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "total": {
+                      "type": "number"
+                    },
+                    "next_offset": {
+                      "type": [
+                        "number",
+                        "null"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "posts",
+                    "total",
+                    "next_offset"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/posts/{id}": {
+      "get": {
+        "operationId": "get_post",
+        "summary": "Look up a post",
+        "description": "One post: its state, each account's result in words, and any link. Never hand over again a post that says do_not_hand_over_again.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "state": {
+                      "type": "string",
+                      "enum": [
+                        "active",
+                        "draft",
+                        "waiting_for_yes",
+                        "cancelled",
+                        "paused"
+                      ]
+                    },
+                    "word": {
+                      "type": "string",
+                      "enum": [
+                        "draft",
+                        "scheduled",
+                        "sending",
+                        "arrived",
+                        "did_not_arrive",
+                        "not_confirmed",
+                        "will_not_go_out",
+                        "paused",
+                        "reconnect",
+                        "waiting_for_yes"
+                      ]
+                    },
+                    "made_by": {
+                      "type": "object",
+                      "properties": {
+                        "kind": {
+                          "type": "string",
+                          "enum": [
+                            "person",
+                            "assistant",
+                            "program"
+                          ]
+                        },
+                        "name": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "kind",
+                        "name"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "made_with_ai": {
+                      "type": "boolean"
+                    },
+                    "created_at": {
+                      "type": "string"
+                    },
+                    "time": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "time_zone": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "parts": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "text": {
+                            "type": "string"
+                          },
+                          "media": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        "required": [
+                          "text",
+                          "media"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "accounts": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "lines": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "account_id": {
+                            "type": "string"
+                          },
+                          "network": {
+                            "type": "string",
+                            "enum": [
+                              "x",
+                              "instagram",
+                              "tiktok",
+                              "facebook",
+                              "threads",
+                              "youtube",
+                              "linkedin",
+                              "bluesky"
+                            ]
+                          },
+                          "handle": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "part": {
+                            "type": "number"
+                          },
+                          "state": {
+                            "type": "string",
+                            "enum": [
+                              "scheduled",
+                              "sending",
+                              "arrived",
+                              "did_not_arrive",
+                              "not_confirmed",
+                              "will_not_go_out"
+                            ]
+                          },
+                          "words": {
+                            "type": "string"
+                          },
+                          "reason": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "link": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "due_at": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "ended_at": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "try_number": {
+                            "type": "number"
+                          }
+                        },
+                        "required": [
+                          "account_id",
+                          "network",
+                          "handle",
+                          "part",
+                          "state",
+                          "words",
+                          "reason",
+                          "link",
+                          "due_at",
+                          "ended_at",
+                          "try_number"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "link": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "do_not_hand_over_again": {
+                      "type": "boolean"
+                    },
+                    "note": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "can_change": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "state",
+                    "word",
+                    "made_by",
+                    "made_with_ai",
+                    "created_at",
+                    "time",
+                    "time_zone",
+                    "parts",
+                    "accounts",
+                    "lines",
+                    "link",
+                    "do_not_hand_over_again",
+                    "note",
+                    "can_change"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "409",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": {
+                          "const": true
+                        },
+                        "code": {
+                          "const": "REFUSED"
+                        },
+                        "status": {
+                          "const": 409
+                        },
+                        "message": {
+                          "type": "string",
+                          "default": "REFUSED"
+                        },
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "message": {
+                              "type": "string"
+                            },
+                            "problems": {
+                              "default": [],
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "level": {
+                                    "type": "string",
+                                    "enum": [
+                                      "block",
+                                      "warn"
+                                    ]
+                                  },
+                                  "message": {
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "level",
+                                  "message"
+                                ],
+                                "additionalProperties": false
+                              }
+                            },
+                            "why": {
+                              "type": "string",
+                              "enum": [
+                                "changed",
+                                "started"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "message",
+                            "problems"
+                          ],
+                          "additionalProperties": false
+                        }
+                      },
+                      "required": [
+                        "defined",
+                        "code",
+                        "status",
+                        "message",
+                        "data"
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": {
+                          "const": false
+                        },
+                        "code": {
+                          "type": "string"
+                        },
+                        "status": {
+                          "type": "number"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "data": {}
+                      },
+                      "required": [
+                        "defined",
+                        "code",
+                        "status",
+                        "message"
+                      ]
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "cancel_post",
+        "summary": "Cancel a post",
+        "description": "Cancels a post made through a key or assistant, while it has not gone out. Posts the person wrote themselves cannot be cancelled here.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "done": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "done"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "409",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": {
+                          "const": true
+                        },
+                        "code": {
+                          "const": "REFUSED"
+                        },
+                        "status": {
+                          "const": 409
+                        },
+                        "message": {
+                          "type": "string",
+                          "default": "REFUSED"
+                        },
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "message": {
+                              "type": "string"
+                            },
+                            "problems": {
+                              "default": [],
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "level": {
+                                    "type": "string",
+                                    "enum": [
+                                      "block",
+                                      "warn"
+                                    ]
+                                  },
+                                  "message": {
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "level",
+                                  "message"
+                                ],
+                                "additionalProperties": false
+                              }
+                            },
+                            "why": {
+                              "type": "string",
+                              "enum": [
+                                "changed",
+                                "started"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "message",
+                            "problems"
+                          ],
+                          "additionalProperties": false
+                        }
+                      },
+                      "required": [
+                        "defined",
+                        "code",
+                        "status",
+                        "message",
+                        "data"
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": {
+                          "const": false
+                        },
+                        "code": {
+                          "type": "string"
+                        },
+                        "status": {
+                          "type": "number"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "data": {}
+                      },
+                      "required": [
+                        "defined",
+                        "code",
+                        "status",
+                        "message"
+                      ]
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "operationId": "update_post",
+        "summary": "Change a post",
+        "description": "Changes a post made through a key or assistant, while it has not gone out. A change to a post waiting for the person's yes keeps it waiting.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "text": {
+                    "type": "string",
+                    "maxLength": 25000
+                  },
+                  "media": {
+                    "maxItems": 35,
+                    "type": "array",
+                    "items": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "format": "uuid",
+                          "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "url": {
+                              "type": "string",
+                              "maxLength": 2000,
+                              "format": "uri"
+                            }
+                          },
+                          "required": [
+                            "url"
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "download_url": {
+                              "type": "string",
+                              "maxLength": 2000,
+                              "format": "uri"
+                            },
+                            "file_id": {
+                              "type": "string",
+                              "maxLength": 200
+                            },
+                            "name": {
+                              "type": "string",
+                              "maxLength": 255
+                            },
+                            "mime_type": {
+                              "type": "string",
+                              "maxLength": 100
+                            }
+                          },
+                          "required": [
+                            "download_url"
+                          ]
+                        }
+                      ]
+                    }
+                  },
+                  "parts": {
+                    "minItems": 1,
+                    "maxItems": 25,
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "text": {
+                          "type": "string",
+                          "maxLength": 25000
+                        },
+                        "media": {
+                          "default": [],
+                          "maxItems": 35,
+                          "type": "array",
+                          "items": {
+                            "anyOf": [
+                              {
+                                "type": "string",
+                                "format": "uuid",
+                                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                              },
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "url": {
+                                    "type": "string",
+                                    "maxLength": 2000,
+                                    "format": "uri"
+                                  }
+                                },
+                                "required": [
+                                  "url"
+                                ]
+                              },
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "download_url": {
+                                    "type": "string",
+                                    "maxLength": 2000,
+                                    "format": "uri"
+                                  },
+                                  "file_id": {
+                                    "type": "string",
+                                    "maxLength": 200
+                                  },
+                                  "name": {
+                                    "type": "string",
+                                    "maxLength": 255
+                                  },
+                                  "mime_type": {
+                                    "type": "string",
+                                    "maxLength": 100
+                                  }
+                                },
+                                "required": [
+                                  "download_url"
+                                ]
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      "required": [
+                        "text"
+                      ]
+                    }
+                  },
+                  "account_ids": {
+                    "maxItems": 50,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "uuid",
+                      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    }
+                  },
+                  "networks": {
+                    "maxItems": 10,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "x",
+                        "instagram",
+                        "tiktok",
+                        "facebook",
+                        "threads",
+                        "youtube",
+                        "linkedin",
+                        "bluesky"
+                      ]
+                    }
+                  },
+                  "group": {
+                    "type": "string",
+                    "maxLength": 100
+                  },
+                  "choices": {
+                    "default": [],
+                    "maxItems": 50,
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "account_id": {
+                          "type": "string",
+                          "format": "uuid",
+                          "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                        },
+                        "instagram": {
+                          "type": "object",
+                          "properties": {
+                            "kind": {
+                              "type": "string",
+                              "enum": [
+                                "post",
+                                "story"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "kind"
+                          ]
+                        },
+                        "facebook": {
+                          "type": "object",
+                          "properties": {
+                            "kind": {
+                              "type": "string",
+                              "enum": [
+                                "post",
+                                "story"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "kind"
+                          ]
+                        },
+                        "tiktok": {
+                          "type": "object",
+                          "properties": {
+                            "privacy": {
+                              "anyOf": [
+                                {
+                                  "type": "string",
+                                  "enum": [
+                                    "PUBLIC_TO_EVERYONE",
+                                    "MUTUAL_FOLLOW_FRIENDS",
+                                    "FOLLOWER_OF_CREATOR",
+                                    "SELF_ONLY"
+                                  ]
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "comments": {
+                              "type": "boolean"
+                            },
+                            "duet": {
+                              "type": "boolean"
+                            },
+                            "stitch": {
+                              "type": "boolean"
+                            },
+                            "disclose": {
+                              "type": "boolean"
+                            },
+                            "yourBrand": {
+                              "type": "boolean"
+                            },
+                            "brandedContent": {
+                              "type": "boolean"
+                            },
+                            "inbox": {
+                              "type": "boolean"
+                            }
+                          }
+                        },
+                        "youtube": {
+                          "type": "object",
+                          "properties": {
+                            "title": {
+                              "type": "string",
+                              "maxLength": 400
+                            },
+                            "made_for_kids": {
+                              "type": "boolean"
+                            },
+                            "cover_media_id": {
+                              "type": "string",
+                              "format": "uuid",
+                              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                            }
+                          },
+                          "required": [
+                            "title",
+                            "made_for_kids"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "account_id"
+                      ]
+                    }
+                  },
+                  "own_texts": {
+                    "default": [],
+                    "maxItems": 50,
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "account_id": {
+                          "type": "string",
+                          "format": "uuid",
+                          "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                        },
+                        "text": {
+                          "type": "string",
+                          "maxLength": 25000
+                        }
+                      },
+                      "required": [
+                        "account_id",
+                        "text"
+                      ]
+                    }
+                  },
+                  "time": {
+                    "type": "string",
+                    "maxLength": 40
+                  },
+                  "time_zone": {
+                    "type": "string",
+                    "maxLength": 64
+                  },
+                  "next_usual_time": {
+                    "type": "boolean"
+                  },
+                  "now": {
+                    "type": "boolean"
+                  },
+                  "draft": {
+                    "type": "boolean"
+                  },
+                  "repeat_rule": {
+                    "type": "object",
+                    "properties": {
+                      "every": {
+                        "type": "string",
+                        "enum": [
+                          "day",
+                          "days",
+                          "week",
+                          "two_weeks",
+                          "month"
+                        ]
+                      },
+                      "days": {
+                        "type": "integer",
+                        "minimum": 2,
+                        "maximum": 6
+                      },
+                      "ends": {
+                        "anyOf": [
+                          {
+                            "type": "object",
+                            "properties": {
+                              "after": {
+                                "type": "integer",
+                                "minimum": 2,
+                                "maximum": 52
+                              }
+                            },
+                            "required": [
+                              "after"
+                            ]
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "on": {
+                                "type": "string",
+                                "format": "date",
+                                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                              }
+                            },
+                            "required": [
+                              "on"
+                            ]
+                          }
+                        ]
+                      }
+                    },
+                    "required": [
+                      "every",
+                      "ends"
+                    ]
+                  },
+                  "leave_signatures_off": {
+                    "default": false,
+                    "type": "boolean"
+                  },
+                  "made_with_ai": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "post": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "state": {
+                          "type": "string",
+                          "enum": [
+                            "active",
+                            "draft",
+                            "waiting_for_yes",
+                            "cancelled",
+                            "paused"
+                          ]
+                        },
+                        "word": {
+                          "type": "string",
+                          "enum": [
+                            "draft",
+                            "scheduled",
+                            "sending",
+                            "arrived",
+                            "did_not_arrive",
+                            "not_confirmed",
+                            "will_not_go_out",
+                            "paused",
+                            "reconnect",
+                            "waiting_for_yes"
+                          ]
+                        },
+                        "made_by": {
+                          "type": "object",
+                          "properties": {
+                            "kind": {
+                              "type": "string",
+                              "enum": [
+                                "person",
+                                "assistant",
+                                "program"
+                              ]
+                            },
+                            "name": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "kind",
+                            "name"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "made_with_ai": {
+                          "type": "boolean"
+                        },
+                        "created_at": {
+                          "type": "string"
+                        },
+                        "time": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "time_zone": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "parts": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "text": {
+                                "type": "string"
+                              },
+                              "media": {
+                                "type": "array",
+                                "items": {
+                                  "type": "string"
+                                }
+                              }
+                            },
+                            "required": [
+                              "text",
+                              "media"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "accounts": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "lines": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "account_id": {
+                                "type": "string"
+                              },
+                              "network": {
+                                "type": "string",
+                                "enum": [
+                                  "x",
+                                  "instagram",
+                                  "tiktok",
+                                  "facebook",
+                                  "threads",
+                                  "youtube",
+                                  "linkedin",
+                                  "bluesky"
+                                ]
+                              },
+                              "handle": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "part": {
+                                "type": "number"
+                              },
+                              "state": {
+                                "type": "string",
+                                "enum": [
+                                  "scheduled",
+                                  "sending",
+                                  "arrived",
+                                  "did_not_arrive",
+                                  "not_confirmed",
+                                  "will_not_go_out"
+                                ]
+                              },
+                              "words": {
+                                "type": "string"
+                              },
+                              "reason": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "link": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "due_at": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "ended_at": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "try_number": {
+                                "type": "number"
+                              }
+                            },
+                            "required": [
+                              "account_id",
+                              "network",
+                              "handle",
+                              "part",
+                              "state",
+                              "words",
+                              "reason",
+                              "link",
+                              "due_at",
+                              "ended_at",
+                              "try_number"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "link": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "do_not_hand_over_again": {
+                          "type": "boolean"
+                        },
+                        "note": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "can_change": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "state",
+                        "word",
+                        "made_by",
+                        "made_with_ai",
+                        "created_at",
+                        "time",
+                        "time_zone",
+                        "parts",
+                        "accounts",
+                        "lines",
+                        "link",
+                        "do_not_hand_over_again",
+                        "note",
+                        "can_change"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "post_ids": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "already_made": {
+                      "type": "boolean"
+                    },
+                    "waiting_for_yes": {
+                      "type": "boolean"
+                    },
+                    "saved_as_draft": {
+                      "type": "boolean"
+                    },
+                    "note": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "post",
+                    "post_ids",
+                    "already_made",
+                    "waiting_for_yes",
+                    "saved_as_draft",
+                    "note"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "409",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": {
+                          "const": true
+                        },
+                        "code": {
+                          "const": "REFUSED"
+                        },
+                        "status": {
+                          "const": 409
+                        },
+                        "message": {
+                          "type": "string",
+                          "default": "REFUSED"
+                        },
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "message": {
+                              "type": "string"
+                            },
+                            "problems": {
+                              "default": [],
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "level": {
+                                    "type": "string",
+                                    "enum": [
+                                      "block",
+                                      "warn"
+                                    ]
+                                  },
+                                  "message": {
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "level",
+                                  "message"
+                                ],
+                                "additionalProperties": false
+                              }
+                            },
+                            "why": {
+                              "type": "string",
+                              "enum": [
+                                "changed",
+                                "started"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "message",
+                            "problems"
+                          ],
+                          "additionalProperties": false
+                        }
+                      },
+                      "required": [
+                        "defined",
+                        "code",
+                        "status",
+                        "message",
+                        "data"
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": {
+                          "const": false
+                        },
+                        "code": {
+                          "type": "string"
+                        },
+                        "status": {
+                          "type": "number"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "data": {}
+                      },
+                      "required": [
+                        "defined",
+                        "code",
+                        "status",
+                        "message"
+                      ]
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/uploads": {
+      "post": {
+        "operationId": "create_upload_link",
+        "summary": "Get a link for a file",
+        "description": "A drop page for the person to put a picture or video on (up to 500 MB, lasts 24 hours). Asking again returns the same link and what was dropped, as media ids to use in create_post.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "url": {
+                      "type": "string"
+                    },
+                    "expires_at": {
+                      "type": "string"
+                    },
+                    "max_bytes": {
+                      "type": "number"
+                    },
+                    "dropped": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "media_id": {
+                            "type": "string"
+                          },
+                          "file_name": {
+                            "type": "string"
+                          },
+                          "state": {
+                            "type": "string",
+                            "enum": [
+                              "uploading",
+                              "checking",
+                              "ready",
+                              "refused"
+                            ]
+                          },
+                          "refusal": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "media_id",
+                          "file_name",
+                          "state",
+                          "refusal"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "url",
+                    "expires_at",
+                    "max_bytes",
+                    "dropped"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "409",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": {
+                          "const": true
+                        },
+                        "code": {
+                          "const": "REFUSED"
+                        },
+                        "status": {
+                          "const": 409
+                        },
+                        "message": {
+                          "type": "string",
+                          "default": "REFUSED"
+                        },
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "message": {
+                              "type": "string"
+                            },
+                            "problems": {
+                              "default": [],
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "level": {
+                                    "type": "string",
+                                    "enum": [
+                                      "block",
+                                      "warn"
+                                    ]
+                                  },
+                                  "message": {
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "level",
+                                  "message"
+                                ],
+                                "additionalProperties": false
+                              }
+                            },
+                            "why": {
+                              "type": "string",
+                              "enum": [
+                                "changed",
+                                "started"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "message",
+                            "problems"
+                          ],
+                          "additionalProperties": false
+                        }
+                      },
+                      "required": [
+                        "defined",
+                        "code",
+                        "status",
+                        "message",
+                        "data"
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": {
+                          "const": false
+                        },
+                        "code": {
+                          "type": "string"
+                        },
+                        "status": {
+                          "type": "number"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "data": {}
+                      },
+                      "required": [
+                        "defined",
+                        "code",
+                        "status",
+                        "message"
+                      ]
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/networks/{network}/rules": {
+      "get": {
+        "operationId": "network_rules",
+        "summary": "A network's rules",
+        "description": "The limits and rules of one network: lengths, files, replies, gaps and daily posts. Read them before handing in.",
+        "parameters": [
+          {
+            "name": "network",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "x",
+                "instagram",
+                "tiktok",
+                "facebook",
+                "threads",
+                "youtube",
+                "linkedin",
+                "bluesky"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "networks": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "network": {
+                            "type": "string",
+                            "enum": [
+                              "x",
+                              "instagram",
+                              "tiktok",
+                              "facebook",
+                              "threads",
+                              "youtube",
+                              "linkedin",
+                              "bluesky"
+                            ]
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "replies": {
+                            "type": "string",
+                            "enum": [
+                              "thread",
+                              "first_comment",
+                              "none"
+                            ]
+                          },
+                          "part_gap_ms": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          },
+                          "daily_posts": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          },
+                          "account_gap_ms": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          },
+                          "rules": {
+                            "type": "object",
+                            "propertyNames": {
+                              "type": "string"
+                            },
+                            "additionalProperties": {}
+                          },
+                          "always_asks_first": {
+                            "type": "boolean"
+                          }
+                        },
+                        "required": [
+                          "network",
+                          "name",
+                          "replies",
+                          "part_gap_ms",
+                          "daily_posts",
+                          "account_gap_ms",
+                          "rules",
+                          "always_asks_first"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "networks"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "409",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": {
+                          "const": true
+                        },
+                        "code": {
+                          "const": "REFUSED"
+                        },
+                        "status": {
+                          "const": 409
+                        },
+                        "message": {
+                          "type": "string",
+                          "default": "REFUSED"
+                        },
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "message": {
+                              "type": "string"
+                            },
+                            "problems": {
+                              "default": [],
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "level": {
+                                    "type": "string",
+                                    "enum": [
+                                      "block",
+                                      "warn"
+                                    ]
+                                  },
+                                  "message": {
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "level",
+                                  "message"
+                                ],
+                                "additionalProperties": false
+                              }
+                            },
+                            "why": {
+                              "type": "string",
+                              "enum": [
+                                "changed",
+                                "started"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "message",
+                            "problems"
+                          ],
+                          "additionalProperties": false
+                        }
+                      },
+                      "required": [
+                        "defined",
+                        "code",
+                        "status",
+                        "message",
+                        "data"
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": {
+                          "const": false
+                        },
+                        "code": {
+                          "type": "string"
+                        },
+                        "status": {
+                          "type": "number"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "data": {}
+                      },
+                      "required": [
+                        "defined",
+                        "code",
+                        "status",
+                        "message"
+                      ]
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
