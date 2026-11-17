@@ -103,7 +103,6 @@ const networks = Object.entries(rules)
     const out = [`### ${n.name} (\`${id}\`)`, '', `- ${REPLIES[n.replies]}`];
     if (n.partGapMs) out.push(`- Gap between parts: ${span(n.partGapMs)}.`);
     if (n.accountGapMs) out.push(`- This network's accounts for one post go ${span(n.accountGapMs)} apart.`);
-    if (n.alwaysAsksFirst) out.push('- A post handed in through a key or an assistant always waits for the person’s yes before it goes.');
     return [...out, ...lines(n.rules)].join('\n');
   })
   .join('\n\n');

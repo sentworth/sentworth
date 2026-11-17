@@ -3,6 +3,7 @@ import { Command, CommanderError } from 'commander';
 import { makeClient, reaching, settingsFrom } from './client.js';
 import * as run from './commands.js';
 import { CliError, EXIT } from './errors.js';
+import { askHidden, configPath, installSkill, KEY_HELP, readSaved, save, setupUrl } from './setup.js';
 
 const collect = (value: string, before: string[] = []) => [...before, value];
 
@@ -11,7 +12,7 @@ type Common = { key?: string; url?: string; json?: boolean };
 // Plain words on stdout, problems on stderr, and an exit code a program can branch on.
 async function go(common: Common, work: (ctx: run.Context) => Promise<number>) {
   try {
-    const settings = settingsFrom(common);
+    const settings = settingsFrom(common, process.env, await readSaved());
     process.exitCode = await reaching(settings.url, () =>
       work({
         client: makeClient(settings),
@@ -38,12 +39,46 @@ const program = new Command('sentworth')
   .addHelpText(
     'after',
     `
-Key: SENTWORTH_KEY or --key. Make one in Sentworth under Settings, Keys.
+Key: run \`npx sentworth\` once and paste it, or give SENTWORTH_KEY or --key.
+${KEY_HELP}
 Exit codes: 0 done, 1 refused, 2 wrong arguments, 3 key not accepted, 4 slow down,
 5 could not reach Sentworth, 6 a post is "Sent, not confirmed" (don’t hand it over again).`,
   )
   .showHelpAfterError()
   .exitOverride();
+
+// `npx sentworth` with no command, or `sentworth setup`: save a key once and give the skill to Hermes and OpenClaw.
+async function setup(options: Common) {
+  const path = configPath();
+  const before = await readSaved(path);
+  const url = setupUrl(before, options.url);
+  let key = (options.key ?? '').trim();
+  if (!key) {
+    if (!process.stdin.isTTY) throw new CliError(`No key given. ${KEY_HELP} Then run: npx sentworth setup --key <key>`, EXIT.usage);
+    console.log(`${KEY_HELP}\nYou see it once there.`);
+    key = await askHidden('Paste your key: ');
+  }
+  if (!key) throw new CliError('No key pasted, so nothing was saved.', EXIT.usage);
+  // Checked before it is saved, so a wrong key is never kept.
+  await go({ key, url, json: false }, (ctx) => run.accounts(ctx));
+  if (process.exitCode) return;
+  await save(path, { ...before, key, ...(url !== setupUrl({}) ? { url } : {}) });
+  console.log(`\nKey saved to ${path}. Every sentworth command now uses it.`);
+  for (const line of await installSkill()) console.log(line);
+  console.log('Next: ask your agent for a post, or run `npx sentworth --help`.');
+}
+
+program
+  .command('setup', { isDefault: true })
+  .description('Save your key and give the skill to Hermes and OpenClaw (what `npx sentworth` alone does)')
+  .option('--key <key>', 'the key, instead of pasting it')
+  .option('--url <address>', 'Sentworth’s address (default https://sentworth.com)')
+  .action((options: Common) =>
+    setup(options).catch((error: unknown) => {
+      console.error(error instanceof Error ? error.message : String(error));
+      process.exitCode = error instanceof CliError ? error.exit : EXIT.refused;
+    }),
+  );
 
 withCommon(program.command('accounts').description('List accounts, groups, usual times and your time zone')).action(
   (options: Common) => go(options, (ctx) => run.accounts(ctx)),

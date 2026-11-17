@@ -25,6 +25,6 @@ jobs:
       - run: pnpm build
       - name: The tag matches package.json
         run: test "v$(node -p "require('./package.json').version")" = "$GITHUB_REF_NAME"
+      # Trusted publishing (no token) needs npm 11.5.1 or newer.
+      - run: npm install -g npm@^11.5.1
       - run: npm publish --provenance --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

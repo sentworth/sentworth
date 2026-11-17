@@ -3,7 +3,7 @@
     "title": "Sentworth API",
     "version": "1.0.0",
     "summary": "Hand posts to a person's social accounts from a program.",
-    "description": "Hand in, look up, change and cancel posts on the accounts a person connected to Sentworth. Make a key in Settings, under Keys, and send it as \"Authorization: Bearer sw_live_…\" (or in an x-api-key header). Every error answers with { \"code\", \"message\", \"details\" }; the message says in words what to do. Limits: 10 asks a second per key, 1,000 writes and 20,000 reads a day per key, and 100 posts in 5 minutes and 400 an hour per person across every way of posting. Answers carry RateLimit-Limit, RateLimit-Remaining and RateLimit-Reset (the second), and RateLimit-Day-* (today's ceiling); a 429 carries Retry-After."
+    "description": "Hand in, look up, change and cancel posts on the accounts a person connected to Sentworth. Make a key in Assistants and programs, under Keys, and send it as \"Authorization: Bearer sw_live_…\" (or in an x-api-key header). Every error answers with { \"code\", \"message\", \"details\" }; the message says in words what to do. Limits: 10 asks a second per key, 1,000 writes and 20,000 reads a day per key, and 100 posts in 5 minutes and 400 an hour per person across every way of posting. Answers carry RateLimit-Limit, RateLimit-Remaining and RateLimit-Reset (the second), and RateLimit-Day-* (today's ceiling); a 429 carries Retry-After."
   },
   "servers": [
     {
@@ -20,7 +20,7 @@
       "bearer": {
         "type": "http",
         "scheme": "bearer",
-        "description": "A key made in Settings, under Keys, starting sw_live_"
+        "description": "A key made in Assistants and programs, under Keys, starting sw_live_"
       }
     }
   },
@@ -30,7 +30,7 @@
       "get": {
         "operationId": "list_accounts",
         "summary": "List accounts",
-        "description": "The person's connected accounts with their ids, their time zone and the time now, what is left today on X and TikTok, and which accounts wait for the person's yes. Call it first.",
+        "description": "The person's connected accounts with their ids, their time zone and the time now, what is left today on X and TikTok, and which accounts the person approves posts to first (waits_for_yes, off unless they turned it on). Call it first.",
         "responses": {
           "200": {
             "description": "OK",
@@ -439,11 +439,7 @@
                               "format": "uuid",
                               "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
                             }
-                          },
-                          "required": [
-                            "title",
-                            "made_for_kids"
-                          ]
+                          }
                         }
                       },
                       "required": [
@@ -981,7 +977,7 @@
                 ]
               }
             },
-            "style": "deepObject",
+            "style": "form",
             "explode": true,
             "allowEmptyValue": true,
             "allowReserved": true
@@ -1006,7 +1002,7 @@
                 ]
               }
             },
-            "style": "deepObject",
+            "style": "form",
             "explode": true,
             "allowEmptyValue": true,
             "allowReserved": true
@@ -1026,7 +1022,7 @@
                 ]
               }
             },
-            "style": "deepObject",
+            "style": "form",
             "explode": true,
             "allowEmptyValue": true,
             "allowReserved": true
@@ -1621,7 +1617,7 @@
       "delete": {
         "operationId": "cancel_post",
         "summary": "Cancel a post",
-        "description": "Cancels a post made through a key or assistant, while it has not gone out. Posts the person wrote themselves cannot be cancelled here.",
+        "description": "Cancels any of the person's posts while it has not gone out, the ones they wrote themselves included.",
         "parameters": [
           {
             "name": "id",
@@ -1763,7 +1759,7 @@
       "patch": {
         "operationId": "update_post",
         "summary": "Change a post",
-        "description": "Changes a post made through a key or assistant, while it has not gone out. A change to a post waiting for the person's yes keeps it waiting.",
+        "description": "Changes any of the person's posts while it has not gone out, the ones they wrote themselves included. \"now\" sends it at once.",
         "parameters": [
           {
             "name": "id",
@@ -2036,11 +2032,7 @@
                               "format": "uuid",
                               "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
                             }
-                          },
-                          "required": [
-                            "title",
-                            "made_for_kids"
-                          ]
+                          }
                         }
                       },
                       "required": [
@@ -2794,9 +2786,6 @@
                               "type": "string"
                             },
                             "additionalProperties": {}
-                          },
-                          "always_asks_first": {
-                            "type": "boolean"
                           }
                         },
                         "required": [
@@ -2806,8 +2795,7 @@
                           "part_gap_ms",
                           "daily_posts",
                           "account_gap_ms",
-                          "rules",
-                          "always_asks_first"
+                          "rules"
                         ],
                         "additionalProperties": false
                       }

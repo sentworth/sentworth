@@ -5,7 +5,6 @@
     "partGapMs": 60000,
     "dailyPosts": null,
     "accountGapMs": null,
-    "alwaysAsksFirst": false,
     "rules": {
       "shortLimit": 280,
       "longLimit": 25000,
@@ -27,7 +26,6 @@
     "partGapMs": 60000,
     "dailyPosts": 100,
     "accountGapMs": null,
-    "alwaysAsksFirst": false,
     "rules": {
       "limit": 2200,
       "hashtags": 30,
@@ -52,7 +50,6 @@
     "partGapMs": null,
     "dailyPosts": 10,
     "accountGapMs": 600000,
-    "alwaysAsksFirst": true,
     "rules": {
       "videoLimit": 2200,
       "photoLimit": 4000,
@@ -69,7 +66,6 @@
     "partGapMs": 60000,
     "dailyPosts": null,
     "accountGapMs": null,
-    "alwaysAsksFirst": false,
     "rules": {
       "limit": 63206,
       "maxPhotos": 10,
@@ -87,7 +83,6 @@
     "partGapMs": 60000,
     "dailyPosts": 250,
     "accountGapMs": null,
-    "alwaysAsksFirst": false,
     "rules": {
       "limit": 500,
       "links": 5,
@@ -105,7 +100,6 @@
     "partGapMs": null,
     "dailyPosts": null,
     "accountGapMs": null,
-    "alwaysAsksFirst": true,
     "rules": {
       "titleLimit": 100,
       "descriptionBytes": 5000,
@@ -119,7 +113,6 @@
     "partGapMs": 60000,
     "dailyPosts": null,
     "accountGapMs": null,
-    "alwaysAsksFirst": false,
     "rules": {
       "limit": 3000,
       "maxPictures": 20,
@@ -132,7 +125,6 @@
     "partGapMs": 60000,
     "dailyPosts": null,
     "accountGapMs": null,
-    "alwaysAsksFirst": false,
     "rules": {
       "limit": 300,
       "textBytes": 3000,

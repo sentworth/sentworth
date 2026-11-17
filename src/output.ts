@@ -80,7 +80,7 @@ export function printAccounts(data: Accounts): string {
   for (const a of data.accounts) {
     const extra = [
       a.state === 'broken' ? 'needs reconnecting' : '',
-      a.waits_for_yes ? 'waits for your yes' : '',
+      a.waits_for_yes ? 'Approve before posting is on' : '',
       a.posts_left_today !== null ? `${String(a.posts_left_today)} posts left today` : '',
       a.groups.length ? `groups: ${a.groups.join(', ')}` : '',
       a.usual_times.length ? `usual times: ${a.usual_times.join(', ')}` : '',
@@ -118,7 +118,6 @@ export function printRules(data: Rules): string {
       if (n.part_gap_ms) out.push(`  Gap between parts: ${HOURS(n.part_gap_ms)}.`);
       if (n.daily_posts) out.push(`  Posts per account in 24 hours: ${String(n.daily_posts)}.`);
       if (n.account_gap_ms) out.push(`  Gap between this network's accounts: ${HOURS(n.account_gap_ms)}.`);
-      if (n.always_asks_first) out.push('  A post from a key always waits for the person’s yes.');
       for (const [name, value] of Object.entries(n.rules))
         out.push(`  ${name}: ${typeof value === 'object' ? JSON.stringify(value) : String(value)}`);
       return out.join('\n');

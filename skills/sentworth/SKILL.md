@@ -9,9 +9,9 @@ Sentworth hands posts to the social accounts a person connected. You use it with
 
 ## Set up
 
-1. The person makes a key in Sentworth under Settings, Keys, and gives it to you as the environment variable `SENTWORTH_KEY` (or you pass `--key`). Never print or store the key, and never type it into a file.
-2. Nothing to install: run `npx sentworth <command>`. The address is `https://sentworth.com`; `SENTWORTH_URL` changes it.
-3. Check it works with `npx sentworth accounts`.
+1. The person makes a key in Sentworth under Assistants and programs, then Skill and command line, and runs `npx sentworth` once in their own terminal to paste it. It is saved for every later command. `SENTWORTH_KEY` or `--key` also work. Never ask the person to paste the key to you, and never print or store it yourself.
+2. Nothing else to install: run `npx sentworth <command>`. The address is `https://sentworth.com`; `SENTWORTH_URL` changes it.
+3. Check it works with `npx sentworth accounts`. "No key" means the person hasn't run `npx sentworth` yet.
 
 ## Commands
 
@@ -29,7 +29,7 @@ Every command takes `--json` for a program to read, and `--key` / `--url`.
 - `sentworth list` lists posts, newest first (`--tab`, `--state`, `--network`, `--made-by`, `--words`, `--from`, `--to`, `--limit`, `--offset`).
 - `sentworth upload <file>` uploads a picture or video and prints its media id.
 - `sentworth rules <network>` prints one network's rules.
-- `sentworth cancel <id>` cancels a post that has not gone out (only ones made through a key or an assistant).
+- `sentworth cancel <id>` cancels a post that has not started sending, the person's own included.
 
 Exit codes: 0 done, 1 refused (the words say why), 2 wrong arguments, 3 key not accepted, 4 slow down (wait the seconds it says), 5 could not reach Sentworth, 6 a post is "Sent, not confirmed".
 
@@ -37,17 +37,17 @@ Exit codes: 0 done, 1 refused (the words say why), 2 wrong arguments, 3 key not 
 
 - Sentworth schedules posts to the social accounts a person connected.
 - Call `sentworth accounts` first and use its account ids, the person's time zone and the time now.
-- Before `sentworth post`, say the words, the accounts and the time back to the person and get a yes.
 - Sentworth adds the person's own signatures; never add one.
 - If a picture or video is missing, ask the person for it with `sentworth upload`.
 - Never hand over again a post that is "Sent, not confirmed": it may already be live.
-- Post well: space posts out, vary the words, and post by hand first from a new account.
+- A post goes out as handed in.
+- Any TikTok or YouTube choice left out takes its default.
 - To connect or reconnect an account, the person opens Accounts in Sentworth.
 - To learn how a post went, ask at most once a minute.
 
 ## Example
 
-Two-part thread to two accounts, as a draft first:
+A two-part thread to two accounts at 9:30 in the person's time zone:
 
 ```
 npx sentworth accounts
@@ -94,7 +94,6 @@ Read these before you write for a network. They are generated from Sentworth's o
 
 - One part only: no thread and no first comment.
 - This network's accounts for one post go 10 minutes apart.
-- A post handed in through a key or an assistant always waits for the person’s yes before it goes.
 - Most characters with a video: 2200
 - Most characters with photos: 4000
 - Most photos: 35
@@ -131,7 +130,6 @@ Read these before you write for a network. They are generated from Sentworth's o
 ### YouTube (`youtube`)
 
 - One part only: no thread and no first comment.
-- A post handed in through a key or an assistant always waits for the person’s yes before it goes.
 - Most characters in the title: 100
 - Longest description: 5000 bytes
 - Biggest video: 1 GB

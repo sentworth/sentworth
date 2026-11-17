@@ -7,17 +7,19 @@ export const DEFAULT_URL = 'https://sentworth.com';
 
 export type Settings = { key: string; url: string };
 
+// A flag wins over the environment, which wins over what `npx sentworth` saved.
 export function settingsFrom(
   flags: { key?: string; url?: string },
   env: Record<string, string | undefined> = process.env,
+  saved: { key?: string; url?: string } = {},
 ): Settings {
-  const key = (flags.key ?? env.SENTWORTH_KEY ?? '').trim();
+  const key = (flags.key ?? env.SENTWORTH_KEY ?? saved.key ?? '').trim();
   if (!key)
     throw new CliError(
-      'No key. Make one in Sentworth under Settings, Keys, then give it as SENTWORTH_KEY or --key.',
+      'No key. Run `npx sentworth` and paste one made in Sentworth under Assistants and programs, or give it as SENTWORTH_KEY or --key.',
       EXIT.key,
     );
-  const url = (flags.url ?? env.SENTWORTH_URL ?? DEFAULT_URL)
+  const url = (flags.url ?? env.SENTWORTH_URL ?? saved.url ?? DEFAULT_URL)
     .trim()
     .replace(/\/+$/, '');
   return { key, url };
@@ -59,7 +61,7 @@ export function unwrap<T>(answer: Answer<T>): T {
   const said = typeof body.message === 'string' ? body.message : '';
   if (status === 401 || status === 403)
     throw new CliError(
-      said || 'This key was not accepted. Check it, or make a new one in Settings, under Keys.',
+      said || 'This key was not accepted. Check it, or make a new one in Sentworth under Assistants and programs.',
       EXIT.key,
     );
   if (status === 429) {

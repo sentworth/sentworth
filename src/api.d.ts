@@ -13,7 +13,7 @@ export interface paths {
         };
         /**
          * List accounts
-         * @description The person's connected accounts with their ids, their time zone and the time now, what is left today on X and TikTok, and which accounts wait for the person's yes. Call it first.
+         * @description The person's connected accounts with their ids, their time zone and the time now, what is left today on X and TikTok, and which accounts the person approves posts to first (waits_for_yes, off unless they turned it on). Call it first.
          */
         get: operations["list_accounts"];
         put?: never;
@@ -64,14 +64,14 @@ export interface paths {
         post?: never;
         /**
          * Cancel a post
-         * @description Cancels a post made through a key or assistant, while it has not gone out. Posts the person wrote themselves cannot be cancelled here.
+         * @description Cancels any of the person's posts while it has not gone out, the ones they wrote themselves included.
          */
         delete: operations["cancel_post"];
         options?: never;
         head?: never;
         /**
          * Change a post
-         * @description Changes a post made through a key or assistant, while it has not gone out. A change to a post waiting for the person's yes keeps it waiting.
+         * @description Changes any of the person's posts while it has not gone out, the ones they wrote themselves included. "now" sends it at once.
          */
         patch: operations["update_post"];
         trace?: never;
@@ -291,8 +291,8 @@ export interface operations {
                             inbox?: boolean;
                         };
                         youtube?: {
-                            title: string;
-                            made_for_kids: boolean;
+                            title?: string;
+                            made_for_kids?: boolean;
                             /** Format: uuid */
                             cover_media_id?: string;
                         };
@@ -640,8 +640,8 @@ export interface operations {
                             inbox?: boolean;
                         };
                         youtube?: {
-                            title: string;
-                            made_for_kids: boolean;
+                            title?: string;
+                            made_for_kids?: boolean;
                             /** Format: uuid */
                             cover_media_id?: string;
                         };
@@ -865,7 +865,6 @@ export interface operations {
                             rules: {
                                 [key: string]: unknown;
                             };
-                            always_asks_first: boolean;
                         }[];
                     };
                 };

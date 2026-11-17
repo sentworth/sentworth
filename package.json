@@ -8,14 +8,15 @@
     "sentworth": "dist/cli.js"
   },
   "files": [
-    "dist"
+    "dist",
+    "skills"
   ],
   "engines": {
     "node": ">=22"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/tsotnebukiya/sentworth.git"
+    "url": "git+https://github.com/sentworth/sentworth.git"
   },
   "homepage": "https://sentworth.com",
   "keywords": [

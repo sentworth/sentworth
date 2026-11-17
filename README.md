@@ -10,10 +10,15 @@ Nothing here connects accounts, approves posts or touches billing: you do that i
 
 ## The command line
 
-You need a key. In Sentworth, open Settings, then Keys, and make one. Give it to the tool as `SENTWORTH_KEY` (or `--key`):
+You need a key. In Sentworth, open Assistants and programs, then Skill and command line, and make one. Then run the tool once and paste it:
 
 ```sh
-export SENTWORTH_KEY=sw_live_…
+npx sentworth
+```
+
+It checks the key, saves it to `~/.config/sentworth/config.json` (readable by you only) and copies the skill into Hermes (`~/.hermes/skills`) and OpenClaw (`~/.openclaw/skills`) when they are installed. `npx sentworth setup --key <key>` does the same without asking. `SENTWORTH_KEY` or `--key` override the saved key.
+
+```sh
 npx sentworth accounts
 ```
 
@@ -58,13 +63,13 @@ Assistants that sign in (Claude Code, Cursor, Codex) need no key: you press Allo
 ### Claude Code
 
 ```
-/plugin marketplace add tsotnebukiya/sentworth
+/plugin marketplace add sentworth/sentworth
 /plugin install sentworth@sentworth
 ```
 
 The plugin brings the skill and the connector to `https://sentworth.com/mcp`. Run `/mcp`, choose sentworth and sign in. Or only the connector: `claude mcp add --transport http sentworth https://sentworth.com/mcp`.
 
-To use only the skill and a key (no connector), copy `skills/sentworth` to `~/.claude/skills/sentworth` and set `SENTWORTH_KEY`.
+To use only the skill and a key (no connector), copy `skills/sentworth` to `~/.claude/skills/sentworth` and run `npx sentworth` once to save the key.
 
 ### Cursor
 
@@ -91,6 +96,6 @@ pnpm check-types && pnpm test && pnpm build
 
 `SKILL.md` is generated: the rules come from Sentworth's instructions to assistants and each network's rules, copied into `data/`. Edit `scripts/skill-template.md` or refresh `data/` and `openapi.json` from Sentworth, then run `pnpm generate`. `pnpm check-skill` fails when it is out of date.
 
-Releasing: bump `version` in `package.json` and `.claude-plugin/plugin.json`, tag `vX.Y.Z` and push the tag. The publish job runs `npm publish --provenance` with the `NPM_TOKEN` secret.
+Releasing: bump `version` in `package.json` and `.claude-plugin/plugin.json`, tag `vX.Y.Z` and push the tag. The publish job runs `npm publish --provenance` through npm's trusted publishing, with no token. The first version was published by hand.
 
 MIT licensed.
